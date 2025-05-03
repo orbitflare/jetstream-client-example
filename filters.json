@@ -1,0 +1,18 @@
+{
+    "filters": {
+        "example-filter": {
+            "account_include": [
+                "11111111111111111111111111111111"
+            ],
+            "account_exclude": [],
+            "account_required": []
+        },
+        "raydium-amm": {
+            "account_include": [],
+            "account_exclude": [],
+            "account_required": [
+                "675kPX9MHTjS2zt1qfr1NYHuzeLXfQM9H24wFSUt1Mp8"
+            ]
+        }
+    }
+}
