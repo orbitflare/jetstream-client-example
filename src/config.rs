@@ -8,7 +8,7 @@ use std::path::PathBuf;
 #[command(about = "JetStream Example Client", long_about = None)]
 pub struct ClientConfig {
     /// Jetstream gRPC URL
-    #[arg(short = 'j', long, default_value = "http://82.27.90.14:7001")]
+    #[arg(short = 'j', long, default_value = "PLACE_URL_HERE")]
     pub jetstream_grpc_url: String,
 
     /// Filter config file path (JSON format)

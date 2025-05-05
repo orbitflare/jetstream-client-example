@@ -1,6 +1,6 @@
 [package]
 name = "jetstream-client-example"
-version = "0.1.0"
+version = "0.0.1"
 edition = "2021"
 description = "Standalone example for connecting to JetStream"
 
@@ -28,7 +28,7 @@ clap = { version = "4", features = ["derive", "env"] }
 serde = { version = "1.0.219", features = ["derive"] }
 serde_json = "1"
 futures = "0.3.24"
-jetstream = { path = "./jetstream_protos" }
+jetstream_protos = { path = "./jetstream_protos" }
 
 [build-dependencies]
 protobuf-src = "1"
