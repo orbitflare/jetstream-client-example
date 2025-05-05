@@ -9,6 +9,8 @@ A standalone example client to connect to JetStream proxy and process transactio
 - Process transaction signatures
 - Support for configuration via command-line or JSON file
 
+For more details on updates and improvements, check the [Jetstream Changelog](https://docs.orbitflare.com/data-streaming/jetstream-changelog).
+
 ## Build
 
 ```bash

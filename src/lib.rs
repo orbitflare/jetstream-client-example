@@ -4,7 +4,7 @@ use std::collections::HashMap;
 use std::fs::File;
 use std::io::BufReader;
 
-use jetstream::jetstream::{
+use jetstream_protos::jetstream::{
     jetstream_client::JetstreamClient, subscribe_update::UpdateOneof, SubscribeRequest,
     SubscribeRequestFilterTransactions,
 };
@@ -49,7 +49,7 @@ pub async fn jetstream_connector(config: ClientConfig) -> anyhow::Result<()> {
     let request = SubscribeRequest {
         transactions: filters,
         accounts: HashMap::new(),
-        ping: Some(jetstream::jetstream::SubscribeRequestPing { id: 1 }),
+        ping: Some(jetstream_protos::jetstream::SubscribeRequestPing { id: 1 }),
     };
 
     let outbound = tokio_stream::iter(vec![request]);

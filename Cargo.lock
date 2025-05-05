@@ -1333,26 +1333,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "4a5f13b858c8d314ee3e8f639011f7ccefe71f97f96e50151fb991f267928e2c"
 
 [[package]]
-name = "jetstream"
-version = "0.1.0"
-dependencies = [
- "prost",
- "prost-types",
- "protobuf-src",
- "tonic",
- "tonic-build",
-]
-
-[[package]]
 name = "jetstream-client-example"
-version = "0.1.0"
+version = "0.0.1"
 dependencies = [
  "anyhow",
  "bs58",
  "clap",
  "env_logger 0.11.8",
  "futures",
- "jetstream",
+ "jetstream_protos",
  "log",
  "prost",
  "prost-types",
@@ -1362,6 +1351,17 @@ dependencies = [
  "solana-sdk",
  "tokio",
  "tokio-stream",
+ "tonic",
+ "tonic-build",
+]
+
+[[package]]
+name = "jetstream_protos"
+version = "0.1.0"
+dependencies = [
+ "prost",
+ "prost-types",
+ "protobuf-src",
  "tonic",
  "tonic-build",
 ]
