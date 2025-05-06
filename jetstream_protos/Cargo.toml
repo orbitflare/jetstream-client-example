@@ -1,18 +1,16 @@
 [package]
 name = "jetstream_protos"
-version = "0.1.0"
+version = "0.0.1"
+description = "Protos for JetStream client"
 edition = "2021"
-description = "JetStream Protocol Buffer Definitions"
+
 
 [dependencies]
-prost = "0.12"
-prost-types = "0.12"
-tonic = { version = "0.10", features = [
-    "tls",
-    "tls-roots",
-    "tls-webpki-roots",
-] }
+prost = { workspace = true }
+prost-types = { workspace = true }
+tonic = { workspace = true }
 
 [build-dependencies]
-protobuf-src = "1"
-tonic-build = "0.10"
+protobuf-src = { version = "1.1.0" }
+tonic-build = { version = "0.12.3" }
+anyhow = { workspace = true }

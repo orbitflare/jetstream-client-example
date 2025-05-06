@@ -1,25 +1,25 @@
-[package]
-name = "jetstream-client-example"
-version = "0.0.1"
+[workspace]
+members = ["jetstream_protos", "jetstream_client"]
+resolver = "2"
+
+[workspace.package]
+version = "0.2.5"
+description = "Fastest path to receive transactions from Solana. More info at https://docs.orbitflare.com/data-streaming/jetstream"
+authors = ["OrbitFlare Team <team@orbitflare.com>"]
+homepage = "https://orbitflare.com/"
 edition = "2021"
-description = "Standalone example for connecting to JetStream"
 
+[profile.release]
+# thin has minimal overhead vs none (default): https://blog.llvm.org/2016/06/thinlto-scalable-and-incremental-lto.html
+lto = "thin"
 
-[lib]
-name = "jetstream_client_example"
-path = "src/lib.rs"
-
-[dependencies]
+[workspace.dependencies]
 anyhow = "1.0.98"
 tokio = { version = "1", features = ["full"] }
 tokio-stream = { version = "0.1.17", features = ["sync"] }
-tonic = { version = "0.10", features = [
-    "tls",
-    "tls-roots",
-    "tls-webpki-roots",
-] }
-prost = "0.12"
-prost-types = "0.12"
+prost = "0.13.1"
+prost-types = "0.13.3"
+tonic = "0.12.3"
 solana-sdk = "=2.2.1"
 bs58 = "0.5.1"
 log = "0.4"
@@ -30,6 +30,7 @@ serde_json = "1"
 futures = "0.3.24"
 jetstream_protos = { path = "./jetstream_protos" }
 
-[build-dependencies]
-protobuf-src = "1"
-tonic-build = "0.10"
+[workspace.build-dependencies]
+protobuf-src = "1.1.0"
+tonic-build = "0.12.3"
+anyhow = "1.0.98"
