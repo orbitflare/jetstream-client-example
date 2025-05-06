@@ -4,32 +4,40 @@ use std::collections::HashMap;
 use std::fs::File;
 use std::io::BufReader;
 
+use config::{ClientConfig, FilterConfig};
 use jetstream_protos::jetstream::{
     jetstream_client::JetstreamClient, subscribe_update::UpdateOneof, SubscribeRequest,
     SubscribeRequestFilterTransactions,
 };
 use solana_sdk::bs58;
 use tokio_stream::StreamExt;
-
-use crate::config::{ClientConfig, FilterConfig};
+use tonic::{transport::Channel, Request};
 
 pub async fn jetstream_connector(config: ClientConfig) -> anyhow::Result<()> {
     log::info!(
         "Starting Jetstream connector with URL: {}",
         config.jetstream_grpc_url
     );
+    let grpc_url = config.jetstream_grpc_url.clone();
+    let channel = Channel::from_shared(grpc_url)?.connect().await?;
 
-    let mut client = JetstreamClient::connect(config.jetstream_grpc_url.clone()).await?;
+    let token = config.x_token.clone().unwrap_or_default();
+    let mut client = JetstreamClient::with_interceptor(channel, move |mut req: Request<()>| {
+        if !token.is_empty() {
+            req.metadata_mut()
+                .insert("authorization", token.parse().unwrap());
+        }
+        Ok(req)
+    });
+
     log::info!("Jetstream connector connected successfully");
 
-    // Build filter configuration
     let filters = build_filters(&config)?;
     log::info!(
         "Using {} filter(s) for transaction filtering",
         filters.len()
     );
 
-    // Log filters details for debugging
     for (name, filter) in &filters {
         log::info!("Filter '{}' configuration:", name);
         if !filter.account_include.is_empty() {
@@ -56,13 +64,10 @@ pub async fn jetstream_connector(config: ClientConfig) -> anyhow::Result<()> {
     let response = client.subscribe(outbound).await?;
     let mut inbound = response.into_inner();
 
-    // Pre-allocate a channel for high-throughput message passing
     let (tx, mut rx) = tokio::sync::mpsc::channel::<String>(10000);
 
-    // Spawn a dedicated logging task
     tokio::spawn(async move {
         while let Some(signature) = rx.recv().await {
-            // Non-blocking log
             log::info!(
                 "Jetstream - Transaction received - Signature: {}",
                 signature
@@ -70,21 +75,15 @@ pub async fn jetstream_connector(config: ClientConfig) -> anyhow::Result<()> {
         }
     });
 
-    // Process incoming messages
     while let Some(response) = inbound.next().await {
         let tx_clone = tx.clone();
-
-        // Process each message in its own task with zero delay
         tokio::spawn(async move {
             if let Ok(msg) = response {
-                // Handle transaction update
                 if let Some(UpdateOneof::Transaction(tx_update)) = msg.update_oneof {
                     if let Some(tx_info) = tx_update.transaction {
                         if !tx_info.signatures.is_empty() {
-                            // Pre-encode the signature string
                             let signature = bs58::encode(&tx_info.signature).into_string();
 
-                            // Non-blocking send to the logging task
                             let _ = tx_clone.try_send(signature);
                         }
                     }

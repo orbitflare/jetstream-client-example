@@ -11,6 +11,10 @@ pub struct ClientConfig {
     #[arg(short = 'j', long, default_value = "PLACE_URL_HERE")]
     pub jetstream_grpc_url: String,
 
+    /// X token
+    #[arg(short = 'x', long)]
+    pub x_token: Option<String>,
+
     /// Filter config file path (JSON format)
     #[arg(short = 'f', long)]
     pub filter_config_path: Option<PathBuf>,

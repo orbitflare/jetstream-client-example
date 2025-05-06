@@ -1,0 +1,22 @@
+[package]
+name = "jetstream-client"
+version = { workspace = true }
+description = "Fastest path to receive transactions from Solana. More info at https://docs.orbitflare.com/data-streaming/jetstream"
+authors = { workspace = true }
+homepage = { workspace = true }
+edition = { workspace = true }
+
+[dependencies]
+anyhow = { workspace = true }
+tokio = { workspace = true }
+tokio-stream = { workspace = true }
+tonic = { workspace = true }
+solana-sdk = { workspace = true }
+bs58 = { workspace = true }
+log = { workspace = true }
+env_logger = { workspace = true }
+clap = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+futures = { workspace = true }
+jetstream_protos = { workspace = true }
