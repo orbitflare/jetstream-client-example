@@ -1361,6 +1361,8 @@ name = "jetstream-client"
 version = "0.2.5"
 dependencies = [
  "anyhow",
+ "borsh 1.5.7",
+ "borsh-derive 1.5.7",
  "bs58",
  "clap",
  "env_logger 0.11.8",
