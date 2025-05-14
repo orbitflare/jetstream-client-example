@@ -1,6 +1,7 @@
 mod connector;
 use clap::Parser;
 use env_logger::Env;
+pub mod decoder;
 
 use connector::config::ClientConfig;
 use connector::jetstream_connector;

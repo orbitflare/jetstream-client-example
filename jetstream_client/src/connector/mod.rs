@@ -7,11 +7,13 @@ use std::io::BufReader;
 use config::{ClientConfig, FilterConfig};
 use jetstream_protos::jetstream::{
     jetstream_client::JetstreamClient, subscribe_update::UpdateOneof, SubscribeRequest,
-    SubscribeRequestFilterTransactions,
+    SubscribeRequestFilterTransactions, SubscribeUpdateTransactionInfo,
 };
-use solana_sdk::bs58;
+use solana_sdk::{bs58, pubkey::Pubkey};
 use tokio_stream::StreamExt;
 use tonic::{transport::Channel, Request};
+
+use crate::decoder::pumpfun::PumpProgramIx;
 
 pub async fn jetstream_connector(config: ClientConfig) -> anyhow::Result<()> {
     log::info!(
@@ -64,14 +66,37 @@ pub async fn jetstream_connector(config: ClientConfig) -> anyhow::Result<()> {
     let response = client.subscribe(outbound).await?;
     let mut inbound = response.into_inner();
 
-    let (tx, mut rx) = tokio::sync::mpsc::channel::<String>(10000);
+    let (tx, mut rx) = tokio::sync::mpsc::channel::<SubscribeUpdateTransactionInfo>(10000);
 
     tokio::spawn(async move {
-        while let Some(signature) = rx.recv().await {
+        while let Some(tx_info) = rx.recv().await {
             log::info!(
                 "Jetstream - Transaction received - Signature: {}",
-                signature
+                bs58::encode(&tx_info.signature).into_string()
             );
+            for instruction in tx_info.instructions {
+                let accounts: Vec<Pubkey> = tx_info
+                    .account_keys
+                    .iter()
+                    .map(|i| {
+                        let mut array = [0; 32];
+                        let bytes = &i[..array.len()];
+                        array.copy_from_slice(bytes);
+                        Pubkey::new_from_array(array)
+                    })
+                    .collect();
+
+                match PumpProgramIx::deserialize_pumpfun(accounts, &instruction.data) {
+                    Ok(ix) => {
+                        log::info!(
+                            "Signature: {} - Pump program ix: {:#?}",
+                            bs58::encode(&tx_info.signature).into_string(),
+                            ix
+                        );
+                    }
+                    Err(_) => {}
+                }
+            }
         }
     });
 
@@ -81,11 +106,7 @@ pub async fn jetstream_connector(config: ClientConfig) -> anyhow::Result<()> {
             if let Ok(msg) = response {
                 if let Some(UpdateOneof::Transaction(tx_update)) = msg.update_oneof {
                     if let Some(tx_info) = tx_update.transaction {
-                        if !tx_info.signatures.is_empty() {
-                            let signature = bs58::encode(&tx_info.signature).into_string();
-
-                            let _ = tx_clone.try_send(signature);
-                        }
+                        let _ = tx_clone.try_send(tx_info);
                     }
                 }
             }

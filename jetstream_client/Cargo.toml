@@ -20,3 +20,5 @@ serde = { workspace = true }
 serde_json = { workspace = true }
 futures = { workspace = true }
 jetstream_protos = { workspace = true }
+borsh = { workspace = true }
+borsh-derive = { workspace = true }
