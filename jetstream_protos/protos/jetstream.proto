@@ -7,6 +7,8 @@ package jetstream;
 service Jetstream {
   // Subscribe to data streams with filtering support
   rpc Subscribe(stream SubscribeRequest) returns (stream SubscribeUpdate) {}
+  // Subscribe to data streams with filtering support and parsed instructions
+  rpc SubscribeParsed(stream SubscribeParsedRequest) returns (stream SubscribeUpdateParsedTransaction) {}
   // Basic ping/pong for connection testing
   rpc Ping(PingRequest) returns (PongResponse) {}
   // Get information about current state
@@ -125,6 +127,61 @@ message CompiledInstruction {
   uint32 program_id_index = 1;
   bytes accounts = 2;
   bytes data = 3;
+}
+
+// ============= Parsed Instruction Messages =============
+message SubscribeParsedRequest {
+  optional SubscribeRequestPing ping = 1;
+}
+
+message Instruction {
+  oneof instruction_oneof {
+    Initialize initialize = 1;
+    SetParams set_params = 2;
+    Create create = 3;
+    Buy buy = 4;
+    Sell sell = 5;
+    Withdraw withdraw = 6;
+  }
+}
+
+message Initialize {}
+
+message SetParams {
+  bytes fee_recipient = 1;
+  uint64 initial_virtual_token_reserves = 2;
+  uint64 initial_virtual_sol_reserves = 3;
+  uint64 initial_real_token_reserves = 4;
+  uint64 token_total_supply = 5;
+  uint64 fee_basis_points = 6;
+}
+
+message Create {
+  string name = 1;
+  string symbol = 2;
+  string uri = 3;
+}
+
+message Buy {
+  uint64 amount = 1;
+  uint64 max_sol_cost = 2;
+}
+
+message Sell {
+  uint64 amount = 1;
+  uint64 min_sol_output = 2;
+}
+
+message Withdraw {}
+
+// For SubscribeParsed RPC
+message SubscribeUpdateParsedTransaction {
+  bytes signature = 1;
+  uint64 slot = 2;
+  SubscribeUpdateAccount account = 3;
+  bytes recent_blockhash = 4;
+  repeated bytes signatures = 5;
+  repeated Instruction instructions = 6;
 }
 
 // ============= Non-streaming Methods =============
