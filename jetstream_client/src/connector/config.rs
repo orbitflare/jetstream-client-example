@@ -30,6 +30,10 @@ pub struct ClientConfig {
     /// Required accounts (comma-separated Solana pubkeys)
     #[arg(short = 'r', long, value_delimiter = ',')]
     pub required_accounts: Option<Vec<String>>,
+
+    /// Enable parsed instruction streaming
+    #[arg(short = 'p', long, action = clap::ArgAction::SetTrue)]
+    pub parsed_enabled: bool,
 }
 
 /// Represents a transaction filter configuration

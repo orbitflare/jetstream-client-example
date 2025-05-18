@@ -4,7 +4,7 @@ use env_logger::Env;
 pub mod decoder;
 
 use connector::config::ClientConfig;
-use connector::jetstream_connector;
+use tokio::sync::watch;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
@@ -16,7 +16,27 @@ async fn main() -> anyhow::Result<()> {
 
     log::info!("Starting JetStream Example Client");
 
-    jetstream_connector(config).await?;
+    let (shutdown_tx, shutdown_rx) = watch::channel(false);
+
+    if config.parsed_enabled {
+        connector::parsed::jetstream_parsed_connector(config, shutdown_rx).await?;
+    } else {
+        connector::connector::jetstream_connector(config).await?;
+    }
+
+    tokio::spawn(async move {
+        match tokio::signal::ctrl_c().await {
+            Ok(()) => {
+                log::info!("Received Ctrl+C signal, initiating shutdown...");
+                let _ = shutdown_tx.send(true);
+                Ok(())
+            }
+            Err(err) => {
+                eprintln!("Error setting up Ctrl+C handler: {}", err);
+                Err(())
+            }
+        }
+    });
 
     Ok(())
 }

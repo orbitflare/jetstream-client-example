@@ -17,23 +17,15 @@ For more details on updates and improvements, check the [Jetstream Changelog](ht
 cargo build --release
 ```
 
-## Usage
-
 ```bash
 # Run with default settings
-./target/release/jetstream-client-example
+cargo run --release
 
-# Specify a custom JetStream gRPC URL
-./target/release/jetstream-client-example -j http://your-jetstream-url:7001
+# parameters
+cargo run --release -- -[params]
 
-# Filter transactions (include accounts)
-./target/release/jetstream-client-example -i <pubkey1>,<pubkey2>
-
-# Use a JSON configuration file for complex filters
-./target/release/jetstream-client-example -f filters.json
-
-# Control logging level with RUST_LOG environment variable
-RUST_LOG=debug ./target/release/jetstream-client-example
+# Parsed endpoint subscription
+cargo run --release -- -j "[PLACE_URL_HERE]" -p
 ```
 
 ## Filter Configuration (JSON)
