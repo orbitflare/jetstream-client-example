@@ -1,5 +1,5 @@
 [workspace]
-members = ["jetstream_protos", "jetstream_client"]
+members = ["jetstream_protos", "clients/rust-client"]
 resolver = "2"
 
 [workspace.package]

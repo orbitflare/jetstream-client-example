@@ -1,67 +1,82 @@
-# JetStream Example Client
+## JetStream Client
 
-A standalone example client to connect to JetStream proxy and process transaction data.
+This repository contains the JetStream client implementations in various programming languages.
 
-## Features
-
-- Connect to JetStream gRPC endpoint
-- Filter transactions based on accounts
-- Process transaction signatures
-- Support for configuration via command-line or JSON file
-
-For more details on updates and improvements, check the [Jetstream Changelog](https://docs.orbitflare.com/data-streaming/jetstream-changelog).
-
-## Build
-
-```bash
-cargo build --release
-```
-
-```bash
-# Run with default settings
-cargo run --release
-
-# parameters
-cargo run --release -- -[params]
-
-# Parsed endpoint subscription
-cargo run --release -- -j "[PLACE_URL_HERE]" -p
-```
-
-## Filter Configuration (JSON)
-
-Create a `filters.json` file with the following structure:
-
-```json
-{
-  "filters": {
-    "my-filter": {
-      "account_include": ["pubkey1", "pubkey2"],
-      "account_exclude": ["pubkey3"],
-      "account_required": ["pubkey4"]
-    },
-    "another-filter": {
-      "account_include": [],
-      "account_exclude": [],
-      "account_required": ["pubkey5", "pubkey6"]
-    }
-  }
-}
-```
-
-## Command-line Options
+## Directory Structure
 
 ```
-  -j, --jetstream-grpc-url <JETSTREAM_GRPC_URL>
-          Jetstream gRPC URL [default: http://[SERVER-IP]:[port]]
-  -f, --filter-config-path <FILTER_CONFIG_PATH>
-          Filter config file path (JSON format)
-  -i, --include-accounts <INCLUDE_ACCOUNTS>
-          Include accounts (comma-separated Solana pubkeys)
-  -e, --exclude-accounts <EXCLUDE_ACCOUNTS>
-          Exclude accounts (comma-separated Solana pubkeys)
-  -r, --required-accounts <REQUIRED_ACCOUNTS>
-          Required accounts (comma-separated Solana pubkeys)
-  -h, --help
-          Print help
+.
+├── clients/
+│   ├── rust-client/          # Rust implementation of the JetStream client
+│   ├── go-client/            # Go implementation of the JetStream client
+│   └── typescript-client/     # TypeScript implementation of the JetStream client
+└── README.md
 ```
+
+## Getting Started
+
+### Go Client
+
+To navigate to the Go client directory and build the client, follow these steps:
+
+1. **Navigate to the Go Client Directory:**
+
+   ```bash
+   cd clients/go-client
+   ```
+
+2. **Build the Go Client:**
+
+   ```bash
+   go build -o jetstream-go-client .
+   ```
+
+3. **Run the Go Client:**
+   ```bash
+   ./jetstream-go-client --help
+   ```
+
+### Rust Client
+
+To navigate to the Rust client directory and build the client, follow these steps:
+
+1. **Navigate to the Rust Client Directory:**
+
+   ```bash
+   cd clients/rust-client
+   ```
+
+2. **Build the Rust Client:**
+
+   ```bash
+   cargo build --release
+   ```
+
+### TypeScript Client
+
+To navigate to the TypeScript client directory and build the client, follow these steps:
+
+1. **Navigate to the TypeScript Client Directory:**
+
+   ```bash
+   cd clients/typescript-client
+   ```
+
+2. **Install Dependencies:**
+
+   ```bash
+   npm install
+   ```
+
+3. **Run the TypeScript Client:**
+   ```bash
+   npm run build && npm run example
+   ```
+
+## Contributing
+
+If you would like to contribute to this project, please fork the repository and submit a pull request.
+
+## License
+
+This project is licensed under the MIT License.
