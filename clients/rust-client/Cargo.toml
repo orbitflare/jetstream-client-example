@@ -1,5 +1,5 @@
 [package]
-name = "jetstream-client"
+name = "rust-client"
 version = { workspace = true }
 description = "Fastest path to receive transactions from Solana. More info at https://docs.orbitflare.com/data-streaming/jetstream"
 authors = { workspace = true }

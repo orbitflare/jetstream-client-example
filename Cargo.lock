@@ -1357,27 +1357,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "4a5f13b858c8d314ee3e8f639011f7ccefe71f97f96e50151fb991f267928e2c"
 
 [[package]]
-name = "jetstream-client"
-version = "0.2.5"
-dependencies = [
- "anyhow",
- "borsh 1.5.7",
- "borsh-derive 1.5.7",
- "bs58",
- "clap",
- "env_logger 0.11.8",
- "futures",
- "jetstream_protos",
- "log",
- "serde",
- "serde_json",
- "solana-sdk",
- "tokio",
- "tokio-stream",
- "tonic",
-]
-
-[[package]]
 name = "jetstream_protos"
 version = "0.0.1"
 dependencies = [
@@ -2041,6 +2020,27 @@ name = "regex-syntax"
 version = "0.8.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2b15c43186be67a4fd63bee50d0303afffcef381492ebe2c5d87f324e1b8815c"
+
+[[package]]
+name = "rust-client"
+version = "0.2.5"
+dependencies = [
+ "anyhow",
+ "borsh 1.5.7",
+ "borsh-derive 1.5.7",
+ "bs58",
+ "clap",
+ "env_logger 0.11.8",
+ "futures",
+ "jetstream_protos",
+ "log",
+ "serde",
+ "serde_json",
+ "solana-sdk",
+ "tokio",
+ "tokio-stream",
+ "tonic",
+]
 
 [[package]]
 name = "rustc-demangle"

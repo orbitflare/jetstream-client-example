@@ -1,0 +1,30 @@
+{
+    "filters": {
+        "pumpfun-filter": {
+            "account_include": [
+                "6EF8rrecthR5Dkzon8Nwu78hRvfCKubJ14M5uBEwF6P"
+            ],
+            "account_exclude": [],
+            "account_required": []
+        },
+        "system-program-filter": {
+            "account_include": [
+                "11111111111111111111111111111111"
+            ],
+            "account_exclude": [],
+            "account_required": []
+        },
+        "combined-filter": {
+            "account_include": [
+                "6EF8rrecthR5Dkzon8Nwu78hRvfCKubJ14M5uBEwF6P",
+                "11111111111111111111111111111111"
+            ],
+            "account_exclude": [
+                "SomeExcludedAccount"
+            ],
+            "account_required": [
+                "SomeRequiredAccount"
+            ]
+        }
+    }
+}
