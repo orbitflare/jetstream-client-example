@@ -1,12 +1,16 @@
-import { JetstreamClient } from '../jetstream-client';
+import { JetstreamClient, SubscribeUpdateParsedTransaction } from '../jetstream-client';
 import { PumpFunDecoder } from '../decoder/pumpfun';
 import { PublicKey } from '@solana/web3.js';
 import * as grpc from '@grpc/grpc-js';
+import { toSimpleString } from '../client/connector';
 
-/**
- * Decoding Example - demonstrates both raw instruction decoding and parsed instruction handling
- * Similar to the Rust jetstream client example
- */
+// Helper function to safely stringify objects with BigInt values
+function safeStringify(obj: any): string {
+    return JSON.stringify(obj, (_, value) =>
+        typeof value === 'bigint' ? value.toString() : value
+    );
+}
+
 async function main() {
     const client = new JetstreamClient({
         endpoint: 'PLACE_URL_HERE',
@@ -14,130 +18,119 @@ async function main() {
     });
 
     try {
-        // Test connection
-        console.log('Testing connection...');
+        console.log('Connecting to Jetstream...');
         const version = await client.getVersion();
-        console.log(`Connected to Jetstream v${version.getVersion()}`);
+        console.log('Connected to Jetstream version:', version);
 
-        // Example 1: Raw Transaction Decoding
-        console.log('\n=== Starting Raw Transaction Decoding ===');
+        // --- Raw Transaction Decoding ---
+        console.log('\n--- Raw Transaction Decoding ---');
 
         const rawStream = client.subscribe({
             transactions: {
                 'pumpfun-filter': {
-                    accountInclude: ['6EF8rrecthR5Dkzon8Nwu78hRvfCKubJ14M5uBEwF6P'], // PumpFun program
+                    accountInclude: ['6EF8rrecthR5Dkzon8Nwu78hRvfCKubJ14M5uBEwF6P'],
                 }
             }
         });
 
         rawStream.on('data', (update) => {
-            if (update.hasTransaction()) {
-                const txUpdate = update.getTransaction()!;
-                const txInfo = txUpdate.getTransaction()!;
+            if (!update.transaction) return;
 
-                const signature = Buffer.from(txInfo.getSignature_asU8()).toString('base64');
-                console.log(`Raw Transaction received - Signature: ${signature}`);
+            const txUpdate = update.transaction!;
+            const txInfo = txUpdate.transaction!;
+            const signature = Buffer.from(txInfo.signature).toString('base64');
+            const instructions = txInfo.instructions;
+            const accountKeys: PublicKey[] = txInfo.accountKeys.map((key: Buffer) => new PublicKey(key));
 
-                // Decode instructions
-                const instructions = txInfo.getInstructionsList();
-                const accountKeys = txInfo.getAccountKeysList().map((key: Uint8Array) =>
-                    new PublicKey(Buffer.from(key as Uint8Array))
-                );
+            console.log('Raw Transaction:');
+            console.log('  Slot:', txUpdate.slot);
+            console.log('  Signature:', signature);
+            console.log('  Account Keys:', accountKeys.map(k => k.toBase58()).join(', '));
+            console.log('  Instruction Count:', instructions.length);
 
-                for (const instruction of instructions) {
-                    const data = instruction.getData_asU8();
-
-                    // Try to decode as PumpFun instruction
-                    const pumpIx = PumpFunDecoder.deserializePumpFun(accountKeys, data);
-                    if (pumpIx) {
-                        console.log(`  PumpFun Instruction: ${pumpIx.type}`);
-
-                        switch (pumpIx.type) {
-                            case 'create':
-                                console.log(`    Create: ${pumpIx.data.name} (${pumpIx.data.symbol})`);
-                                console.log(`    URI: ${pumpIx.data.uri}`);
-                                break;
-                            case 'buy':
-                                console.log(`    Buy: ${pumpIx.data.amount} tokens, max cost: ${pumpIx.data.maxSolCost} lamports`);
-                                break;
-                            case 'sell':
-                                console.log(`    Sell: ${pumpIx.data.amount} tokens, min output: ${pumpIx.data.minSolOutput} lamports`);
-                                break;
-                        }
-                    }
-                }
-            }
+            console.log('');
         });
 
-        rawStream.on('error', (error) => {
-            console.error('Raw stream error:', error);
+        rawStream.on('error', (err) => {
+            console.error('Raw stream error:', err);
         });
 
-        // Example 2: Parsed Instruction Handling
-        console.log('\n=== Starting Parsed Instruction Handling ===');
+        // --- Parsed Instruction Handling ---
+        console.log('\n--- Parsed Instruction Handling ---');
 
         const parsedStream = client.subscribeParsed(1);
 
-        parsedStream.on('data', (update) => {
-            if (!update.getSignature_asU8() || update.getSignature_asU8().length === 0) {
-                return;
-            }
+        parsedStream.on('data', (update: SubscribeUpdateParsedTransaction) => {
+            const instructions = update.instructions;
+            const signature = update.signature;
 
-            const signature = Buffer.from(update.getSignature_asU8()).toString('base64');
+            console.log('Parsed Transaction:');
+            console.log('  Slot:', update.slot);
+            console.log('  Signature:', toSimpleString(signature));
+            console.log('  Instruction Count:', instructions.length);
 
-            // Extract instruction types
-            const instructions = update.getInstructionsList();
-            const instructionTypes: string[] = [];
-
-            for (const instruction of instructions) {
-                if (instruction.hasInitialize()) {
-                    instructionTypes.push('initialize');
-                } else if (instruction.hasSetParams()) {
-                    instructionTypes.push('set_params');
-                } else if (instruction.hasCreate()) {
-                    const createData = instruction.getCreate()!;
-                    instructionTypes.push(`create(${createData.getName()}, ${createData.getSymbol()})`);
-                } else if (instruction.hasBuy()) {
-                    const buyData = instruction.getBuy()!;
-                    instructionTypes.push(`buy(amount: ${buyData.getAmount()}, max_cost: ${buyData.getMaxSolCost()})`);
-                } else if (instruction.hasSell()) {
-                    const sellData = instruction.getSell()!;
-                    instructionTypes.push(`sell(amount: ${sellData.getAmount()}, min_output: ${sellData.getMinSolOutput()})`);
-                } else if (instruction.hasWithdraw()) {
-                    instructionTypes.push('withdraw');
+            instructions.forEach((ix: any, i: number) => {
+                if (ix.initialize) {
+                    console.log(`  Instruction [${i}] Type: initialize`);
+                } else if (ix.setParams) {
+                    console.log(`  Instruction [${i}] Type: set_params`);
+                    const d = ix.setParams;
+                    console.log(`    Fee Recipient: ${new PublicKey(d.feeRecipient).toBase58()}`);
+                    console.log(`    Initial Virtual Token Reserves: ${d.initialVirtualTokenReserves}`);
+                    console.log(`    Initial Virtual SOL Reserves: ${d.initialVirtualSolReserves}`);
+                    console.log(`    Initial Real Token Reserves: ${d.initialRealTokenReserves}`);
+                    console.log(`    Token Total Supply: ${d.tokenTotalSupply}`);
+                    console.log(`    Fee Basis Points: ${d.feeBasisPoints}`);
+                } else if (ix.create) {
+                    const d = ix.create!;
+                    console.log(`  Instruction [${i}] Type: create`);
+                    console.log(`    Name: ${d.name}`);
+                    console.log(`    Symbol: ${d.symbol}`);
+                    console.log(`    URI: ${d.uri}`);
+                } else if (ix.buy) {
+                    const d = ix.buy!;
+                    console.log(`  Instruction [${i}] Type: buy`);
+                    console.log(`    Amount: ${d.amount}`);
+                    console.log(`    Max Cost: ${d.maxSolCost}`);
+                } else if (ix.sell) {
+                    const d = ix.sell!;
+                    console.log(`  Instruction [${i}] Type: sell`);
+                    console.log(`    Amount: ${d.amount}`);
+                    console.log(`    Min Output: ${d.minSolOutput}`);
+                } else if (ix.withdraw) {
+                    console.log(`  Instruction [${i}] Type: withdraw`);
                 }
-            }
+            });
 
-            const instructionSummary = instructionTypes.length > 0
-                ? `, Instructions: ${instructionTypes.join(', ')}`
-                : '';
-
-            console.log(`Parsed Transaction received - Signature: ${signature}${instructionSummary}`);
+            console.log('');
         });
 
-        parsedStream.on('error', (error) => {
-            console.error('Parsed stream error:', error);
+        parsedStream.on('error', (err) => {
+            console.error('Parsed stream error:', err);
         });
 
-        // Keep the connection alive
-        console.log('\nListening for transactions... Press Ctrl+C to exit');
+        console.log('Listening for transactions...');
 
-        // Handle graceful shutdown
         process.on('SIGINT', () => {
             console.log('\nShutting down...');
             client.close();
             process.exit(0);
         });
 
-        // Keep the process running
         await new Promise(() => { });
 
-    } catch (error) {
-        console.error('Error:', error);
+    } catch (err) {
+        console.error('Fatal error:', err);
         client.close();
         process.exit(1);
     }
 }
 
-// Run the example
-main().catch(console.error); 
+const PUMP_FUN_PROGRAM_ID = new PublicKey('6EF8rrecthR5Dkzon8Nwu78hRvfCKubJ14M5uBEwF6P');
+
+const hasPumpFunProgram = (accounts: PublicKey[]) =>
+    accounts.some(account =>
+        account.equals(PUMP_FUN_PROGRAM_ID)
+    );
+
+main().catch(console.error);
