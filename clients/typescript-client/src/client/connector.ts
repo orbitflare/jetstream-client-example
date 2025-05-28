@@ -1,6 +1,25 @@
 import * as grpc from '@grpc/grpc-js';
-import { JetstreamClient, JetstreamUtils } from '../jetstream-client';
+import * as bs58 from 'bs58';
+import { JetstreamClient } from '../jetstream-client';
 import '../examples/decoding-example';
+
+export function toSimpleString(data: any): string {
+    if (!data) return 'null';
+
+    if (data instanceof Uint8Array) {
+        return bs58.default.encode(data);
+    }
+
+    if (Array.isArray(data)) {
+        return data.map(item => toSimpleString(item)).join(', ');
+    }
+
+    if (typeof data === 'object') {
+        return JSON.stringify(data);
+    }
+
+    return String(data);
+}
 
 async function main() {
     const client = new JetstreamClient({
@@ -11,38 +30,42 @@ async function main() {
     console.log('Connecting to Jetstream...');
 
     try {
-        // Test connection
         const version = await client.getVersion();
-        console.log(`Connected to Jetstream version: ${version.getVersion()}`);
+        console.log('Connected to Jetstream version:', version.version);
 
-        // Subscribe to all transactions
         const stream = client.subscribe({
             transactions: {
-                'all': {}
-            }
+                all: {},
+            },
         });
 
-        console.log('Listening for transactions...');
+        console.log('Listening for transactions...\n');
 
         stream.on('data', (update) => {
-            if (update.hasTransaction()) {
-                const txUpdate = update.getTransaction()!;
-                const txInfo = txUpdate.getTransaction()!;
+            if (update.transaction) {
+                const txUpdate = update.transaction!;
+                const txInfo = txUpdate.transaction!;
 
-                console.log(`Transaction at slot ${txUpdate.getSlot()}:`);
-                console.log(`  Signature: ${JetstreamUtils.bytesToHex(txInfo.getSignature_asU8())}`);
-                console.log(`  Instructions: ${txInfo.getInstructionsList()}`);
-                console.log(`  Account keys: ${txInfo.getAccountKeysList()}`);
+                console.log('Transaction:');
+                console.log('  Slot:', txUpdate.slot);
+                console.log('  Signature:', toSimpleString(txInfo.signature));
+                console.log('  Instructions:', toSimpleString(txInfo.instructions));
+                console.log('  Account Keys:', toSimpleString(txInfo.accountKeys));
+                console.log('');
             }
 
-            if (update.hasAccount()) {
-                const accUpdate = update.getAccount()!;
-                const accInfo = accUpdate.getAccount()!;
+            if (update.account) {
+                const accUpdate = update.account!;
+                const accInfo = accUpdate.account!;
 
-                console.log(`Account update at slot ${accUpdate.getSlot()}:`);
-                console.log(`  Address: ${JetstreamUtils.bytesToHex(accInfo.getPubkey_asU8())}`);
-                console.log(`  Lamports: ${accInfo.getLamports()}`);
-                console.log(`  Owner: ${JetstreamUtils.bytesToHex(accInfo.getOwner_asU8())}`);
+                console.log('Account Update:');
+                console.log('  Slot:', accUpdate.slot);
+                console.log('  Address:', toSimpleString(accInfo.pubkey));
+                console.log('  Lamports:', accInfo.lamports?.toString() || 'null');
+                console.log('  Owner:', toSimpleString(accInfo.owner));
+                console.log('  Data Length:', accInfo.data?.length || 0);
+                console.log('  Data Preview:', toSimpleString(accInfo.data?.slice(0, 32)));
+                console.log('');
             }
         });
 
@@ -54,9 +77,8 @@ async function main() {
             console.log('Stream ended');
         });
 
-        // Run for 30 seconds then exit
         setTimeout(() => {
-            console.log('Closing connection...');
+            console.log('Closing connection after 30 seconds...');
             stream.cancel();
             client.close();
         }, 30000);
@@ -70,4 +92,4 @@ async function main() {
 
 if (require.main === module) {
     main().catch(console.error);
-} 
+}

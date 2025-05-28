@@ -7,6 +7,7 @@ import (
 	"io"
 	"log"
 	"os"
+	"strings"
 
 	"jetstream-client-go/internal/config"
 	"jetstream-client-go/internal/decoder"
@@ -18,12 +19,20 @@ import (
 	"google.golang.org/grpc/metadata"
 )
 
+// cleanGrpcURL removes http:// or https:// prefixes from the URL if present
+func cleanGrpcURL(url string) string {
+	url = strings.TrimPrefix(url, "http://")
+	url = strings.TrimPrefix(url, "https://")
+	return url
+}
+
 // RunClient runs the main jetstream client (non-parsed mode)
 func RunClient(ctx context.Context, cfg *config.ClientConfig) error {
 	log.Printf("Starting Jetstream connector with URL: %s", cfg.JetstreamGrpcURL)
 
-	// Create gRPC connection
-	conn, err := grpc.Dial(cfg.JetstreamGrpcURL, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	// Create gRPC connection with cleaned URL
+	grpcURL := cleanGrpcURL(cfg.JetstreamGrpcURL)
+	conn, err := grpc.Dial(grpcURL, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		return fmt.Errorf("failed to connect to gRPC server: %w", err)
 	}
@@ -101,8 +110,9 @@ func RunClient(ctx context.Context, cfg *config.ClientConfig) error {
 func RunParsedClient(ctx context.Context, cfg *config.ClientConfig) error {
 	log.Printf("Starting Jetstream parsed connector with URL: %s", cfg.JetstreamGrpcURL)
 
-	// Create gRPC connection
-	conn, err := grpc.Dial(cfg.JetstreamGrpcURL, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	// Create gRPC connection with cleaned URL
+	grpcURL := cleanGrpcURL(cfg.JetstreamGrpcURL)
+	conn, err := grpc.Dial(grpcURL, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		return fmt.Errorf("failed to connect to gRPC server: %w", err)
 	}

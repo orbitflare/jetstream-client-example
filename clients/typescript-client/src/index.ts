@@ -9,6 +9,5 @@ export {
     SubscribeFilters,
 } from './jetstream-client';
 
-export * from './generated/jetstream_pb';
-export * from './generated/jetstream_grpc_pb';
+export * from './generated/jetstream_protos/protos/jetstream';
 export * from './decoder/pumpfun'; 

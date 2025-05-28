@@ -1,39 +1,31 @@
 {
-    "name": "jetstream-typescript-client",
+    "name": "jetstream-client-example",
     "version": "1.0.0",
-    "description": "TypeScript client for Jetstream gRPC service",
-    "main": "dist/index.js",
-    "types": "dist/index.d.ts",
+    "description": "Jetstream client with Protocol Buffer support",
     "scripts": {
-        "proto:generate": "grpc_tools_node_protoc --plugin=protoc-gen-ts=./node_modules/.bin/protoc-gen-ts --plugin=protoc-gen-grpc=./node_modules/.bin/grpc_tools_node_protoc_plugin --js_out=import_style=commonjs,binary:./src/generated --grpc_out=grpc_js:./src/generated --ts_out=grpc_js:./src/generated -I ../jetstream_protos/protos ../jetstream_protos/protos/*.proto",
-        "build": "mkdir -p src/generated && npm run proto:generate && tsc",
+        "proto:generate": "protoc --experimental_allow_proto3_optional --plugin=./node_modules/.bin/protoc-gen-ts_proto --ts_proto_out=./src/generated --ts_proto_opt=outputServices=grpc-js,env=node,useOptionals=messages,exportCommonSymbols=false,esModuleInterop=true -I ../../ ../../jetstream_protos/protos/*.proto",
+        "build": "mkdir -p src/generated && pnpm run proto:generate",
         "start": "ts-node src/client/connector.ts",
         "example": "ts-node src/examples/decoding-example.ts",
         "clean": "rm -rf dist src/generated"
     },
-    "dependencies": {
-        "@grpc/grpc-js": "^1.9.14",
-        "@grpc/proto-loader": "^0.7.10",
-        "@solana/web3.js": "^1.87.6",
-        "borsh": "^0.7.0",
-        "google-protobuf": "^3.21.2"
-    },
     "devDependencies": {
-        "@types/google-protobuf": "^3.15.12",
-        "@types/node": "^20.10.5",
-        "grpc-tools": "^1.12.4",
-        "grpc_tools_node_protoc_ts": "^5.3.3",
-        "ts-node": "^10.9.2",
-        "typescript": "^5.3.3"
+        "@types/node": "^20.10.0",
+        "ts-node": "^10.9.0",
+        "ts-proto": "^1.165.0",
+        "typescript": "^5.3.0",
+        "protobufjs": "^7.2.5",
+        "long": "^5.0.0"
     },
-    "keywords": [
-        "grpc",
-        "jetstream",
-        "solana",
-        "typescript",
-        "client"
-    ],
-    "author": "",
-    "license": "MIT",
+    "dependencies": {
+        "@grpc/grpc-js": "^1.9.0",
+        "@grpc/proto-loader": "^0.7.10",
+        "@solana/web3.js": "^1.98.2",
+        "borsh": "^0.7.0",
+        "bs58": "^6.0.0"
+    },
+    "engines": {
+        "node": ">=18.0.0"
+    },
     "packageManager": "pnpm@10.8.1+sha512.c50088ba998c67b8ca8c99df8a5e02fd2ae2e2b29aaf238feaa9e124248d3f48f9fb6db2424949ff901cffbb5e0f0cc1ad6aedb602cd29450751d11c35023677"
 }

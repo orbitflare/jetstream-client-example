@@ -1,5 +1,5 @@
 import * as grpc from '@grpc/grpc-js';
-import { JetstreamClient as GrpcJetstreamClient } from './generated/jetstream_grpc_pb';
+import { JetstreamClient as GrpcJetstreamClient, JetstreamService } from './generated/jetstream_protos/protos/jetstream';
 import {
     SubscribeRequest,
     SubscribeUpdate,
@@ -12,7 +12,7 @@ import {
     SubscribeRequestFilterTransactions,
     SubscribeRequestFilterAccounts,
     SubscribeRequestPing,
-} from './generated/jetstream_pb';
+} from './generated/jetstream_protos/protos/jetstream';
 
 export interface JetstreamClientConfig {
     endpoint: string;
@@ -70,47 +70,41 @@ export class JetstreamClient {
         const stream = this.client.subscribe();
 
         // Send initial subscription request
-        const request = new SubscribeRequest();
+        const request: SubscribeRequest = {
+            transactions: {},
+            accounts: {},
+            ping: undefined
+        };
 
         // Set up transaction filters
         if (filters.transactions) {
-            const transactionMap = request.getTransactionsMap();
             Object.entries(filters.transactions).forEach(([key, filter]) => {
-                const txFilter = new SubscribeRequestFilterTransactions();
-                if (filter.accountInclude) {
-                    txFilter.setAccountIncludeList(filter.accountInclude);
-                }
-                if (filter.accountExclude) {
-                    txFilter.setAccountExcludeList(filter.accountExclude);
-                }
-                if (filter.accountRequired) {
-                    txFilter.setAccountRequiredList(filter.accountRequired);
-                }
-                transactionMap.set(key, txFilter);
+                const txFilter: SubscribeRequestFilterTransactions = {
+                    accountInclude: filter.accountInclude || [],
+                    accountExclude: filter.accountExclude || [],
+                    accountRequired: filter.accountRequired || []
+                };
+                request.transactions[key] = txFilter;
             });
         }
 
         // Set up account filters
         if (filters.accounts) {
-            const accountMap = request.getAccountsMap();
             Object.entries(filters.accounts).forEach(([key, filter]) => {
-                const accFilter = new SubscribeRequestFilterAccounts();
-                if (filter.account) {
-                    accFilter.setAccountList(filter.account);
-                }
-                if (filter.owner) {
-                    accFilter.setOwnerList(filter.owner);
-                }
-                // TODO: Add support for complex filters (memcmp, datasize, lamports)
-                accountMap.set(key, accFilter);
+                const accFilter: SubscribeRequestFilterAccounts = {
+                    account: filter.account || [],
+                    owner: filter.owner || [],
+                    filters: []
+                };
+                request.accounts[key] = accFilter;
             });
         }
 
         // Set up ping
         if (filters.ping) {
-            const ping = new SubscribeRequestPing();
-            ping.setId(filters.ping.id);
-            request.setPing(ping);
+            request.ping = {
+                id: filters.ping.id
+            };
         }
 
         stream.write(request);
@@ -123,12 +117,9 @@ export class JetstreamClient {
     subscribeParsed(pingId?: number): grpc.ClientDuplexStream<SubscribeParsedRequest, SubscribeUpdateParsedTransaction> {
         const stream = this.client.subscribeParsed();
 
-        const request = new SubscribeParsedRequest();
-        if (pingId !== undefined) {
-            const ping = new SubscribeRequestPing();
-            ping.setId(pingId);
-            request.setPing(ping);
-        }
+        const request: SubscribeParsedRequest = {
+            ping: pingId !== undefined ? { id: pingId } : undefined
+        };
 
         stream.write(request);
         return stream;
@@ -139,8 +130,9 @@ export class JetstreamClient {
      */
     async ping(count: number = 1): Promise<PongResponse> {
         return new Promise((resolve, reject) => {
-            const request = new PingRequest();
-            request.setCount(count);
+            const request: PingRequest = {
+                count: count
+            };
 
             this.client.ping(request, (error, response) => {
                 if (error) {
@@ -157,7 +149,7 @@ export class JetstreamClient {
      */
     async getVersion(): Promise<GetVersionResponse> {
         return new Promise((resolve, reject) => {
-            const request = new GetVersionRequest();
+            const request: GetVersionRequest = {};
 
             this.client.getVersion(request, (error, response) => {
                 if (error) {
@@ -225,5 +217,5 @@ export class JetstreamUtils {
     }
 }
 
-export * from './generated/jetstream_pb';
-export * from './generated/jetstream_grpc_pb'; 
+// Export all types from the generated protobuf code
+export * from './generated/jetstream_protos/protos/jetstream'; 
