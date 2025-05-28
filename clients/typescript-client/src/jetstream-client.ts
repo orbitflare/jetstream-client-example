@@ -59,8 +59,9 @@ export class JetstreamClient {
 
     constructor(config: JetstreamClientConfig) {
         this.endpoint = config.endpoint;
+        this.endpoint = this.endpoint.replace(/^https?:\/\//, '');
         const credentials = config.credentials || grpc.credentials.createInsecure();
-        this.client = new GrpcJetstreamClient(config.endpoint, credentials, config.options);
+        this.client = new GrpcJetstreamClient(this.endpoint, credentials, config.options);
     }
 
     /**
