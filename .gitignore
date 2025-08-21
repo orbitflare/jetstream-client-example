@@ -1,7 +1,7 @@
 /target
 /clients/typescript-client/node_modules
 /clients/typescript-client/dist
-/clients/typescript-client/src/generated
+# /clients/typescript-client/src/generated
 /clients/rust-client/target
 /clients/go-client/jetstream-go-client
 
