@@ -5,5 +5,17 @@
 /clients/rust-client/target
 /clients/go-client/jetstream-go-client
 
+# IDE files
+.idea/
+.vscode/
+
+# Rust
+**/*.rs.bk
+Cargo.lock
+
+# TypeScript
+*.log
+.npm
+.eslintcache
 
 

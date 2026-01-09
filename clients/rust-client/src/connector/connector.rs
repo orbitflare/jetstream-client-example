@@ -8,7 +8,7 @@ use jetstream_protos::jetstream::{
 };
 use solana_sdk::{bs58, pubkey::Pubkey};
 use tokio_stream::StreamExt;
-use tonic::{transport::Channel, Request};
+use tonic::{metadata::MetadataValue, transport::Channel, Request};
 
 use crate::decoder::pumpfun::PumpProgramIx;
 
@@ -23,10 +23,19 @@ pub async fn jetstream_connector(config: ClientConfig) -> anyhow::Result<()> {
     let channel = Channel::from_shared(grpc_url)?.connect().await?;
 
     let token = config.x_token.clone().unwrap_or_default();
+    let token_metadata: Option<MetadataValue<tonic::metadata::Ascii>> = if !token.is_empty() {
+        Some(
+            token
+                .parse()
+                .map_err(|e| anyhow::anyhow!("Failed to parse authorization token: {}", e))?,
+        )
+    } else {
+        None
+    };
+
     let mut client = JetstreamClient::with_interceptor(channel, move |mut req: Request<()>| {
-        if !token.is_empty() {
-            req.metadata_mut()
-                .insert("authorization", token.parse().unwrap());
+        if let Some(token_val) = &token_metadata {
+            req.metadata_mut().insert("authorization", token_val.clone());
         }
         Ok(req)
     });

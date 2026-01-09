@@ -18,11 +18,21 @@ pub async fn jetstream_parsed_connector(
 
     let channel = Channel::builder(url_str.parse()?).connect().await?;
 
-    let x_token: MetadataValue<_> = config.x_token.clone().unwrap_or_default().parse()?;
+    let has_token = !config.x_token.clone().unwrap_or_default().is_empty();
+    let x_token: Option<MetadataValue<_>> = if has_token {
+        Some(
+            config
+                .x_token
+                .clone()
+                .unwrap_or_default()
+                .parse()
+                .map_err(|e| anyhow::anyhow!("Failed to parse x-token: {}", e))?,
+        )
+    } else {
+        None
+    };
 
     let mut client = JetstreamClient::new(channel.clone());
-
-    let has_token = !config.x_token.clone().unwrap_or_default().is_empty();
 
     log::info!("Jetstream parsed connector connected successfully");
 
@@ -32,21 +42,17 @@ pub async fn jetstream_parsed_connector(
 
     let outbound = tokio_stream::iter(vec![request]);
 
-    let response_result = if has_token {
-        let mut request = tonic::Request::new(outbound);
-        request.metadata_mut().insert("x-token", x_token.clone());
-        timeout(Duration::from_secs(5), client.subscribe_parsed(request)).await
+    let response = if let Some(token) = x_token {
+        let mut req = tonic::Request::new(outbound);
+        req.metadata_mut().insert("x-token", token);
+        client.subscribe_parsed(req).await?
     } else {
-        timeout(Duration::from_secs(5), client.subscribe_parsed(outbound)).await
-    };
-
-    let response = match response_result {
-        Ok(Ok(response)) => response,
-        Ok(Err(e)) => return Err(anyhow::anyhow!("Failed to subscribe: {}", e)),
-        Err(_) => return Err(anyhow::anyhow!("Subscribe timeout")),
+        client.subscribe_parsed(outbound).await?
     };
 
     let mut inbound = response.into_inner();
+
+    log::info!("Starting to receive parsed transactions...");
 
     let (tx, mut rx) = tokio::sync::mpsc::channel::<String>(10000);
 
@@ -72,61 +78,70 @@ pub async fn jetstream_parsed_connector(
 
     loop {
         tokio::select! {
-            Some(response) = inbound.next() => {
-                let tx_clone = tx.clone();
+            response = inbound.next() => {
+                match response {
+                    Some(Ok(parsed_tx)) => {
+                        let tx_clone = tx.clone();
 
-                // Process each message in its own task
-                let task = tokio::spawn(async move {
-                    if let Ok(parsed_tx) = response {
-                        if !parsed_tx.signature.is_empty() {
-                            let signature = bs58::encode(&parsed_tx.signature).into_string();
+                        // Process each message in its own task
+                        let task = tokio::spawn(async move {
+                            if !parsed_tx.signature.is_empty() {
+                                let signature = bs58::encode(&parsed_tx.signature).into_string();
 
-                            // Extract and format instruction types for display only
-                            let instruction_summary = if !parsed_tx.instructions.is_empty() {
-                                let instruction_types: Vec<String> = parsed_tx.instructions.iter()
-                                    .filter_map(|instruction| {
-                                        match &instruction.instruction_oneof {
-                                            Some(jetstream_protos::jetstream::instruction::InstructionOneof::Initialize(_)) => {
-                                                Some("initialize".to_string())
+                                // Extract and format instruction types for display only
+                                let instruction_summary = if !parsed_tx.instructions.is_empty() {
+                                    let instruction_types: Vec<String> = parsed_tx.instructions.iter()
+                                        .filter_map(|instruction| {
+                                            match &instruction.instruction_oneof {
+                                                Some(jetstream_protos::jetstream::instruction::InstructionOneof::Initialize(_)) => {
+                                                    Some("initialize".to_string())
+                                                }
+                                                Some(jetstream_protos::jetstream::instruction::InstructionOneof::SetParams(_)) => {
+                                                    Some("set_params".to_string())
+                                                }
+                                                Some(jetstream_protos::jetstream::instruction::InstructionOneof::Create(_)) => {
+                                                    Some("create".to_string())
+                                                }
+                                                Some(jetstream_protos::jetstream::instruction::InstructionOneof::Buy(_)) => {
+                                                    Some("buy".to_string())
+                                                }
+                                                Some(jetstream_protos::jetstream::instruction::InstructionOneof::Sell(_)) => {
+                                                    Some("sell".to_string())
+                                                }
+                                                Some(jetstream_protos::jetstream::instruction::InstructionOneof::Withdraw(_)) => {
+                                                    Some("withdraw".to_string())
+                                                }
+                                                None => None,
                                             }
-                                            Some(jetstream_protos::jetstream::instruction::InstructionOneof::SetParams(_)) => {
-                                                Some("set_params".to_string())
-                                            }
-                                            Some(jetstream_protos::jetstream::instruction::InstructionOneof::Create(_)) => {
-                                                Some("create".to_string())
-                                            }
-                                            Some(jetstream_protos::jetstream::instruction::InstructionOneof::Buy(_)) => {
-                                                Some("buy".to_string())
-                                            }
-                                            Some(jetstream_protos::jetstream::instruction::InstructionOneof::Sell(_)) => {
-                                                Some("sell".to_string())
-                                            }
-                                            Some(jetstream_protos::jetstream::instruction::InstructionOneof::Withdraw(_)) => {
-                                                Some("withdraw".to_string())
-                                            }
-                                            None => None,
-                                        }
-                                    })
-                                    .collect();
+                                        })
+                                        .collect();
 
-                                format!(", Instructions: {}", instruction_types.join(", "))
-                            } else {
-                                "".to_string()
-                            };
+                                    format!(", Instructions: {}", instruction_types.join(", "))
+                                } else {
+                                    "".to_string()
+                                };
 
-                            let log_message = format!(
-                                "Jetstream Parsed - Transaction received - Signature: {}{}",
-                                signature,
-                                instruction_summary
-                            );
+                                let log_message = format!(
+                                    "Jetstream Parsed - Transaction received - Signature: {}{}",
+                                    signature,
+                                    instruction_summary
+                                );
 
-                            let _ = tx_clone.try_send(log_message);
-                        }
+                                let _ = tx_clone.try_send(log_message);
+                            }
+                        });
+
+                        spawned_tasks.push(task);
+                        spawned_tasks.retain(|task| !task.is_finished());
                     }
-                });
-
-                spawned_tasks.push(task);
-                spawned_tasks.retain(|task| !task.is_finished());
+                    Some(Err(e)) => {
+                        log::warn!("Error receiving parsed transaction: {}", e);
+                    }
+                    None => {
+                        log::info!("Parsed stream ended");
+                        break;
+                    }
+                }
             }
             Ok(()) = shutdown_rx.changed() => {
                 if *shutdown_rx.borrow() {
