@@ -1,82 +1,57 @@
-## JetStream Client
+# JetStream Client Examples
 
-This repository contains the JetStream client implementations in various programming languages.
+Example client implementations for [OrbitFlare Jetstream](https://docs.orbitflare.com/data-streaming/jetstream) - a high-performance gRPC service for real-time Solana transaction streaming.
 
-## Directory Structure
+## Clients
 
+- **Rust**: `clients/rust-client/` - See [README](clients/rust-client/README.md)
+- **Go**: `clients/go-client/` - See [README](clients/go-client/README.md)
+- **TypeScript**: `clients/typescript-client/` - See [README](clients/typescript-client/README.md)
+
+## Quick Start
+
+### Rust
+
+```bash
+cd clients/rust-client
+cargo build --release
+./target/release/rust-client -j http://fra.jetstream.orbitflare.com:80
 ```
-.
-├── clients/
-│   ├── rust-client/          # Rust implementation of the JetStream client
-│   ├── go-client/            # Go implementation of the JetStream client
-│   └── typescript-client/     # TypeScript implementation of the JetStream client
-└── README.md
+
+For parsed instruction streaming:
+
+```bash
+./target/release/rust-client -j http://fra.jetstream.orbitflare.com:80 -p
 ```
 
-## Getting Started
+### Go
 
-### Go Client
+```bash
+cd clients/go-client
+go build -o jetstream-go-client .
+./jetstream-go-client --jetstream-grpc-url http://fra.jetstream.orbitflare.com:80
+```
 
-To navigate to the Go client directory and build the client, follow these steps:
+### TypeScript
 
-1. **Navigate to the Go Client Directory:**
+```bash
+cd clients/typescript-client
+npm install
+npm run build && npm run example
+```
 
-   ```bash
-   cd clients/go-client
-   ```
+## Endpoints
 
-2. **Build the Go Client:**
 
-   ```bash
-   go build -o jetstream-go-client .
-   ```
+- 🇳🇱 Amsterdam 
+- 🇩🇪 Frankfurt 
+- 🇬🇧 London 
+- 🇺🇸 New York 
+- 🇺🇸 Ashburn
+- 🇺🇸 Utah 
+- 🇺🇸 Los Angeles 
+- 🇯🇵 Tokyo 
 
-3. **Run the Go Client:**
-   ```bash
-   ./jetstream-go-client --help
-   ```
+## Documentation
 
-### Rust Client
-
-To navigate to the Rust client directory and build the client, follow these steps:
-
-1. **Navigate to the Rust Client Directory:**
-
-   ```bash
-   cd clients/rust-client
-   ```
-
-2. **Build the Rust Client:**
-
-   ```bash
-   cargo build --release
-   ```
-
-### TypeScript Client
-
-To navigate to the TypeScript client directory and build the client, follow these steps:
-
-1. **Navigate to the TypeScript Client Directory:**
-
-   ```bash
-   cd clients/typescript-client
-   ```
-
-2. **Install Dependencies:**
-
-   ```bash
-   npm install
-   ```
-
-3. **Run the TypeScript Client:**
-   ```bash
-   npm run build && npm run example
-   ```
-
-## Contributing
-
-If you would like to contribute to this project, please fork the repository and submit a pull request.
-
-## License
-
-This project is licensed under the MIT License.
+For detailed documentation, see [OrbitFlare Jetstream Docs](https://docs.orbitflare.com/data-streaming/jetstream).
