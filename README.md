@@ -43,14 +43,15 @@ npm run build && npm run example
 ## Endpoints
 
 
-- 🇳🇱 Amsterdam 
-- 🇩🇪 Frankfurt 
-- 🇬🇧 London 
-- 🇺🇸 New York 
-- 🇺🇸 Ashburn
-- 🇺🇸 Utah 
-- 🇺🇸 Los Angeles 
-- 🇯🇵 Tokyo 
+- 🇳🇱 Amsterdam
+- 🇮🇪 Dublin
+- 🇩🇪 Frankfurt
+- 🇬🇧 London
+- 🇺🇸 New York
+- 🇺🇸 Utah
+- 🇯🇵 Tokyo
+- 🇸🇬 Singapore
+- 🇱🇹 Siauliai
 
 ## Documentation
 
